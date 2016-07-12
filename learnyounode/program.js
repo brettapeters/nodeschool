@@ -158,7 +158,9 @@ function TimeObj(date) {
 	};
 }
 
-var port = process.argv[2];
+var port = process.argv[2] || process.env.PORT;
+var host = process.argv[3] || process.env.IP;
+
 var server = http.createServer(function(req, res) {
 	if (req.method !== 'GET') { return res.end('Send a GET request\n'); }
 	var { pathname, query } = url.parse(req.url, true);
@@ -182,4 +184,17 @@ var server = http.createServer(function(req, res) {
 		res.end();
 	}
 });
-server.listen(port);
+
+server.listen(port, host, () => {
+	console.log(`App listening at https://${process.env.C9_HOSTNAME}:${port}`);
+});
+
+server.on('error', (e) => {
+	if (e.code == 'EADDRINUSE') {
+    	console.log('Address in use, retrying...');
+    	setTimeout(() => {
+    		server.close();
+    		server.listen(port, host);
+    	}, 1000);
+	}
+});
